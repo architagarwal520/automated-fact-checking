@@ -77,13 +77,13 @@ The Automated Fact-Checking System uses a sophisticated deep learning architectu
 
 Key Components of the Model
 
-1. Embedding Layer
+## Embedding Layer
 
   The embedding layer is the first step of the model and is used to convert tokenized claims and evidence into dense vector representations. Each token (word) in the claim and evidence is mapped to a continuous-valued   vector, where semantically similar words are placed close together in the vector space.
   
   Why Embeddings?: Word embeddings capture the semantic meaning of words and reduce the dimensionality of the input text, making it easier for the model to learn patterns across large vocabulary sizes.
 
-2. LSTM Layers
+## LSTM Layers
 
   The model uses two separate LSTM (Long Short-Term Memory) networks:
   
@@ -93,7 +93,7 @@ Key Components of the Model
   
   Why LSTM?: Climate-related claims and evidence often involve long sentences with intricate dependencies. LSTMs help retain important contextual information over long input sequences, improving the model’s ability to   understand and relate claims to evidence.
   
-3. Word-Level Attention Mechanism
+## Word-Level Attention Mechanism
 
   The attention mechanism is applied at the word level to calculate the relevance of each word in the evidence with respect to the claim. The attention mechanism assigns higher weights to the words that are most         relevant to the claim, allowing the model to focus on the critical parts of the evidence.
   
@@ -109,11 +109,11 @@ Key Components of the Model
   The attention weights are used to create a context vector by taking a weighted sum of the evidence LSTM outputs.
   The context vector is then combined with the claim’s LSTM output to form the final representation for classification.
 
-4. Final LSTM Layer
+## Final LSTM Layer
 
   After the attention mechanism, the final LSTM layer takes the combined representation of the claim and evidence and processes it to capture any remaining dependencies. This allows the model to refine the contextual    relationship between the claim and the evidence further.
 
-5. Fully Connected Layer (FFNN)
+## Fully Connected Layer (FFNN)
   
   The final LSTM output is passed to a Fully Connected Layer (FFNN) that performs the classification. The FFNN maps the final output to one of the four possible classes:
   
@@ -126,27 +126,74 @@ Key Components of the Model
 
 # Model Training
 
-Model Parameters:
+## Model Parameters:
   - Vocabulary Size: The number of unique tokens in the data.
   - Embedding Dimension: 50, which is the size of the vector space where each word is mapped.
   - Hidden Dimension: 128, which defines the size of the hidden state in the LSTM layers.
   - Number of Layers: 2 LSTM layers, providing the model with the capacity to capture complex patterns in the data.
   - Dropout: 0.5, which is applied to prevent overfitting by randomly turning off neurons during training.
 
-Training Loss:
+## Training Loss:
   - The training loss decreases steadily over the 10 epochs, starting from around 1.28 and ending at around 1.14.
   - This indicates that the model is learning and improving its performance on the training data. The model is adjusting its weights effectively during backpropagation to minimize the loss.
   - A continuously decreasing training loss is a positive sign that the model is able to fit the training data well.
 
 # Model Evaluation
 
-Training Loss:
+## Training Loss:
+
+![Training Loss](Training.png)
 
  - The training loss continuously decreases over the 10 epochs, which indicates that the model is learning the patterns in the training data. This is a typical behavior as the model minimizes the loss function by       updating weights through backpropagation.
  - A decreasing training loss is usually a good sign that the model is fitting the data well. However, it is important to monitor both training and validation loss/accuracy to ensure that the model is not overfitting.
- - 
-Validation Loss and Accuracy:
+
+## Validation Loss and Accuracy:
+
+![Validation Accuracy and  Loss](Validation.png)
 
  - The validation loss starts increasing after the initial few epochs. This is a clear indicator of overfitting. Overfitting happens when the model is learning the training data too well, capturing noise and specific   patterns that do not generalize to unseen data (i.e., the validation set).
- - The validation accuracy is unstable and starts decreasing after a few epochs, which is another signal of overfitting. While the model is performing well on the training set (as seen by the decreasing training        loss), it is not generalizing to the validation set.
+ - The validation accuracy is steady at the start and starts decreasing after a few epochs, which is another signal of overfitting. While the model is performing well on the training set (as seen by the decreasing      training loss), it is not generalizing to the validation set.
 
+# Conclusion
+
+## Overfitting:
+
+The main issue here is overfitting. While the model's performance on the training set improves, it starts to perform worse on the validation set. This suggests that the model has become too specific to the training data and is not generalizing well to unseen data.
+
+## Model Performance:
+
+The validation accuracy starts at around 45% but decreases over time. A decreasing validation accuracy alongside an increasing validation loss suggests that the model is not learning patterns that generalize to new data. In contrast, the model might be memorizing or fitting the noise in the training data.
+
+The model has demonstrated a relatively poor performance in evidence retrieval, as indicated by the Evidence Retrieval F-score of 0.003607 when retrieving the top 4 evidences. The low F-score suggests that the system struggles to find relevant evidence accurately. With a TF-IDF matrix of 60,000 feature sets and n_components set to 100, the retrieval process fails to strike a balance between retrieving all relevant evidence while avoiding irrelevant information.
+
+The decision to retrieve the top 4 evidences was based on the average number of evidences per claim in the training dataset. However, increasing the number of retrieved evidences further decreased the Evidence Retrieval F-score. This highlights that the current approach is not sufficient to capture meaningful evidence effectively.
+
+Despite the low evidence retrieval performance, the Claim Classification Accuracy was 0.4415584, which indicates that the model performs reasonably well in classifying claims based on the evidence that is retrieved. However, the poor evidence retrieval significantly limits the system’s overall potential.
+
+# Planned Improvements
+
+## Improving Evidence Retrieval:
+
+- Refining the Retrieval Method:
+The current TF-IDF-based approach may not be sufficient for this task, especially with a large feature set (60,000). I plan to explore more contextual retrieval methods using pretrained embeddings such as BERT, which can better capture the semantic relationship between claims and evidence.
+
+- Reducing Dimensionality: While n_components is set to 100, the dimensionality reduction might have been too aggressive, leading to loss of important information. I will experiment with different values for n_components and explore other dimensionality reduction techniques like PCA or TruncatedSVD.
+  
+- Multi-hop Evidence Retrieval:
+I will explore multi-hop evidence retrieval techniques, which allow the model to retrieve evidence across multiple hops or reasoning steps. This could help improve retrieval performance by allowing the system to combine information from multiple sources.
+
+ - Incorporating Contextual Embeddings:
+Instead of using TF-IDF, I will explore models like BERT or RoBERTa for evidence retrieval. These models provide contextual embeddings that can capture deeper semantic relationships between claims and evidence, potentially improving the quality of retrieved evidence.
+
+- Optimizing the Number of Evidences:
+The choice to retrieve 4 pieces of evidence was based on the training data average, but I plan to further optimize this number through experimentation to find the ideal balance between precision and recall for evidence retrieval.
+
+## Improving Classification:
+
+- Increasing Regularization: I plan to increase the dropout rate or implement L2 regularization to reduce the model’s reliance on specific features in the training set and improve its ability to handle unseen data.
+  
+- Hyperparameter Tuning: I will experiment with tuning hyperparameters such as learning rate, batch size, hidden dimension size, and embedding size to find the optimal configuration that balances model complexity and performance.
+  
+- Exploring Simpler Models: Reducing the number of LSTM layers or the hidden dimension size will make the model less complex, which can help in avoiding overfitting when training on limited data.
+  
+- Cross-Validation: I plan to implement k-fold cross-validation to evaluate the model's performance on different parts of the dataset. This will provide a better understanding of its generalization capability across multiple data splits.
